@@ -1,0 +1,12 @@
+# name,url,filter
+Domingo,http://www.domingo.nl,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+Angular (ChangeLog),https://github.com/angular/angular.js/blob/master/CHANGELOG.md,# filter body (1)|^.*<body[^>]*>|^.*<article class="markdown-body entry-content" itemprop="mainContentOfPage">|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+Angular (Blog),https://blog.angularjs.org/,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+Artifactory JFrog (ReleaseNotes),https://www.jfrog.com/confluence/display/RTF/Release+Notes,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+Bootstrap (ReleaseNotes), https://github.com/twbs/bootstrap/releases,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|.*<div class="release-body commit open">|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+GitLab (ChangeLog),https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CHANGELOG,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>|Go to group.*Snippets
+GitHub (News),https://github.com/blog/broadcasts,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+Jenkins (ChangeLog),https://jenkins-ci.org/changelog/,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+JHipster (Release Notes),https://www.jfrog.com/confluence/display/RTF/Release+Notes,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+SprintToolSuite,http://docs.spring.io/sts/nan/latest/NewAndNoteworthy.html,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
+Eclipse,http://www.eclipse.org/,# filter body (1)|^.*<body[^>]*>|# filter body (2)|<\/body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>
