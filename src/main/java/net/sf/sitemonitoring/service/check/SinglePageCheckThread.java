@@ -129,10 +129,11 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
 					}
 
 					if (check.isCheckForChanges()) {
-                        String filteredWebPage = filterWebPage(check,webPage);
+                        String filteredWebPage = filterWebPage(check.getCheckForChangesFilter(), webPage);
                         log.info("Check page for changes:" + check.getUrl());
-                        String cachedWebPage = loadCachedWebPage(check);
-                        updateCachedWebPage(check, filteredWebPage);
+                        String cachedWebPage = loadFile(getWebPageCacheFile(check));
+
+                        updateCachedWebPage(getWebPageCacheFile(check), getWebPageCacheBakFile(check), filteredWebPage);
                         if (cachedWebPage != null) {
                             String pageDiff = diffWebPageChanged(filteredWebPage, cachedWebPage);
                             if (!StringUtils.isEmpty(pageDiff)) {
@@ -204,8 +205,8 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
                     line1 = StringEscapeUtils.escapeHtml(line1);
                     line2 = StringEscapeUtils.escapeHtml(line2);
                     count++;
-                    diffBuf.append("<p>Diff ["+count+"]:");
-                    diffBuf.append("<ul>");
+                    diffBuf.append("<p>Diff ["+count+"]:\n");
+                    diffBuf.append("<ul>\n");
                     boolean marked = false;
                     for(int n=0 ; n< line1.length() && n<line2.length() ; n++) {
                         if (line1.charAt(n) != line2.charAt(n)) {
@@ -245,10 +246,10 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
                         }
                     }
 
-                    diffBuf.append("<li/> "+line1);
-                    diffBuf.append("<li/> "+line2);
-                    diffBuf.append("</ul>");
-                    diffBuf.append("</ul>");
+                    diffBuf.append("<li> "+line1+"</li>\n");
+                    diffBuf.append("<li> "+line2+"</li>\n");
+                    diffBuf.append("</ul>\n");
+                    diffBuf.append("</p>\n");
                 }
                 line1 = br1.readLine();
                 line2 = br2.readLine();
@@ -259,9 +260,27 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
         return diffBuf.toString();
     }
 
-	private String globalFilterWebPage(Check check, String webPage, String globalFilter) {
-        String url = check.getUrl();
-        Pattern p = Pattern.compile(globalFilter, Pattern.DOTALL);
+	private String globalFilterWebPage(String webPage, String globalFilter) {
+		String filteredWebPage = webPage;
+        Pattern p = Pattern.compile(globalFilter, Pattern.DOTALL| Pattern.CASE_INSENSITIVE | Pattern. UNICODE_CASE | Pattern.MULTILINE);
+        Matcher m = p.matcher(webPage);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+        	int startMatch = m.start();
+        	int endMatch = m.end();
+        	if (startMatch>0) {
+        		filteredWebPage = filteredWebPage.substring(0,startMatch);
+        	}
+        	if (endMatch < filteredWebPage.length()) {
+        		filteredWebPage = filteredWebPage.substring(endMatch);
+        	}
+        	m = p.matcher(filteredWebPage);
+        }
+        return filteredWebPage;
+    }
+	
+	private String globalFilterWebPageBak(String webPage, String globalFilter) {
+		Pattern p = Pattern.compile(globalFilter, Pattern.DOTALL| Pattern.CASE_INSENSITIVE | Pattern. UNICODE_CASE | Pattern.MULTILINE);
         Matcher m = p.matcher(webPage);
         StringBuffer sb = new StringBuffer();
         while (m.find()) {
@@ -272,15 +291,16 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
         return filteredWebPage;
     }
         
-    private String filterWebPage(Check check, String webPage) {        
+	private String filterWebPage(String filterSet, String webPage) {        
         // Read filters
-        String filterSet = check.getCheckForChangesFilter();
         String[] filters = null;
         if (filterSet!=null) {
             if (filterSet.contains("\n")) {
                 filters = filterSet.toLowerCase().split("\n");
             } else if (filterSet.contains("|")) {
                 filters = filterSet.toLowerCase().split("\\|");
+            } else {
+            	filters = new String[]{filterSet};
             }
         } else {
             filters = new String[]{};
@@ -288,20 +308,21 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
         
         // Apply filters
         String filteredWebPage = webPage;
-        for(String filter : filters) {
-            if (!filter.startsWith(FILTER_COMMENT)) {
-                filteredWebPage = globalFilterWebPage(check,filteredWebPage,filter);
-            }
+        if (filters!=null) {
+	        for(String filter : filters) {
+	            if (!filter.startsWith(FILTER_COMMENT)) {
+	                filteredWebPage = globalFilterWebPage(filteredWebPage,filter);
+	            }
+	        }
         }
         
         return filteredWebPage;
     }
 
-	private String loadCachedWebPage(Check check) {
-		File webPageCacheFile = getWebPageCacheFile(check);
-		log.error("loadCachedWebPage from :" + webPageCacheFile.getAbsolutePath());
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(webPageCacheFile)))) {
-			if (webPageCacheFile.exists()) {
+	private String loadFile(File file) {
+		log.error("loadCachedWebPage from :" + file.getAbsolutePath());
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+			if (file.exists()) {
 				StringBuffer sb = new StringBuffer();
 				String line = br.readLine();
 				while (line != null) {
@@ -311,16 +332,14 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
 				return sb.toString();
 			}
 		} catch (Exception e) {
-			log.error("Couldn't read cached webpage from:" + webPageCacheFile.getAbsolutePath());
+			log.warn("Couldn't read cached webpage from:" + file.getAbsolutePath());
 		}
 		return null;
 	}
 
-	private void updateCachedWebPage(Check check, String webPage) {
-		File webPageCacheFile = getWebPageCacheFile(check);
-		File webPageCacheBakFile = getWebPageCacheBakFile(check);
+	private void updateCachedWebPage(File webPageCacheFile, File webPageCacheBakFile, String webPage) {
 		webPageCacheFile.renameTo(webPageCacheBakFile);
-		log.error("saveCachedWebPage to :" + webPageCacheFile.getAbsolutePath());
+		log.debug("saveCachedWebPage to :" + webPageCacheFile.getAbsolutePath());
 		try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(webPageCacheFile)));
 				BufferedReader br = new BufferedReader(
 						new InputStreamReader(new ByteArrayInputStream(webPage.getBytes())))) {

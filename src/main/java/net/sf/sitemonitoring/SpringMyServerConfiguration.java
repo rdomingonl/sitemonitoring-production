@@ -15,8 +15,8 @@ import org.springframework.jndi.JndiTemplate;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 
-@MyServerProfile
-@Configuration
+//@MyServerProfile
+//@Configuration
 public class SpringMyServerConfiguration {
 
 	@Bean

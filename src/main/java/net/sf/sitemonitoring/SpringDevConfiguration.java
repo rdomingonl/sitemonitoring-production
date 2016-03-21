@@ -14,8 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 
-@DevProfile
-@Configuration
+// @DevProfile
+// @Configuration
 public class SpringDevConfiguration {
 
 	@Bean

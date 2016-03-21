@@ -1,6 +1,8 @@
 package net.sf.sitemonitoring;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,18 +13,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.hsqldb.jdbc.JDBCDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Profile({ "dev", "standalone" })
+//@Profile({ "dev", "standalone" })
 @SpringBootApplication
+@Configuration
+@EnableAutoConfiguration
+@ComponentScan
+@EnableScheduling
 public class Main {
-
+	
 	private static org.hsqldb.server.Server hsql;
 
 	public static void main(String[] args) throws SQLException, IOException {
@@ -51,24 +65,35 @@ public class Main {
 	 *            Arguments
 	 */
 	public static void start(String[] args) {
-		log.info("Starting HSQL database in server mode");
-		System.out.println("*** STARTING DATABASE ***");
+		// log.info("Starting HSQL database in server mode");
+		//System.out.println("*** STARTING DATABASE ***");
 		// first start server
-		startHsqlServer();
-		try {
-			// then stop the server in order to move log to script
-			hsql.stop();
-			while (true) {
-				hsql.checkRunning(false);
-				Thread.sleep(200);
-			}
-		} catch (Exception ex) {
-			// server stopped, now start server again
-			startHsqlServer();
-		}
-		System.out.println("*** DATABASE STARTED ***");
+		// startHsqlServer();
+//		try {
+//			// then stop the server in order to move log to script
+//			hsql.stop();
+//			while (true) {
+//				hsql.checkRunning(false);
+//				Thread.sleep(200);
+//			}
+//		} catch (Exception ex) {
+//			// server stopped, now start server again
+//			startHsqlServer();
+//		}
+		log.info("*** DATABASE STARTED ***");
 		log.info("Starting Spring Boot application");
-		new SpringApplicationBuilder(Main.class).headless(false).run(args);
+		ConfigurableApplicationContext ctx = new SpringApplicationBuilder(Main.class).headless(false).run(args);
+		Environment env = ctx.getEnvironment();
+        try {
+			log.info("Access URLs:\n----------------------------------------------------------\n\t" +
+			    "Local: \t\thttp://127.0.0.1:{}\n\t" +
+			    "External: \thttp://{}:{}\n----------------------------------------------------------",
+			    env.getProperty("server.port"),
+			    InetAddress.getLocalHost().getHostAddress(),
+			    env.getProperty("server.port"));
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**

@@ -1,12 +1,17 @@
 package net.sf.sitemonitoring.service;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.sf.sitemonitoring.entity.Check;
@@ -17,10 +22,6 @@ import net.sf.sitemonitoring.entity.Check.IntervalType;
 import net.sf.sitemonitoring.entity.Configuration;
 import net.sf.sitemonitoring.repository.CheckRepository;
 import net.sf.sitemonitoring.repository.CheckResultRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -66,6 +67,8 @@ public class InitDbService {
 		configuration.setUserAgent("sitemonitoring http://sitemonitoring.sourceforge.net");
 		configuration.setInfoMessage("Please don't monitor my websites (like javavids.com and sitemonitoring.sourceforge.net). Lot's of people started doing it and effectively DDOSed them. If you monitor them anyway, your IP address will be blocked!");
 		configuration.setCheckForChangesFilter("# filter body (1)|^.*<body[^>]*>|# filter body (2)|</body[^>]*>.*|# filter script|<script[^>]*>.*</script>|# filter tags|<[^>]*>");
+
+		hardcodedPrivateConfig(configuration);
 		
 		configurationService.save(configuration);
 
@@ -94,5 +97,64 @@ public class InitDbService {
 
 		System.out.println("*** DATABASE INIT FINISHED ***");
 	}
+	private void hardcodedPrivateConfig(Configuration configuration) throws IOException {
+        // TOOD RD load config from file
+        configuration.setEmailSubject("SiteMonitoring notification: {CHECK-NAME}");
+        configuration.setEmailFrom("raymond@domingo.nl");
+        configuration.setAdminEmail("raymond@domingo.nl");
+        configuration.setSendEmails(true);
+        configuration.setEmailServerHost("smtp.gmail.com");
+        configuration.setEmailServerPort(587);
+        configuration.setEmailServerUsername("raymond@domingo.nl");
+        configuration.setEmailServerPassword("flhdpfqvhmsginid");
+
+        // Load Pre-defined check4changes
+        // TODO RD allow configuration of location of pre-defined-check4changes file
+        InputStream pdcIn = getClass().getResourceAsStream("/pre-defined-check4changes.csv");
+        if (pdcIn!=null) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(pdcIn));
+            String checkDefinition = br.readLine();
+            while(checkDefinition!=null) {
+                if (!checkDefinition.startsWith("#")) { // skip comment
+                    String[] values = checkDefinition.split(",");
+                    if (values.length==3) {
+                        String name = values[0];
+                        String url = values[1];
+                        String filter = values[2];
+                        log.info("Adding pre-defined-check4changes");
+                        log.info("- name    : "+name);
+                        log.info("- url     : "+url);
+                        log.info("- filter  : "+filter);
+                        Check check = new Check();
+                        check.setActive(true);
+                        check.setName(name);
+                        check.setUrl(url.trim());
+                        check.setCheckForChangesFilter(filter);
+                        check.setConditionType(CheckCondition.CONTAINS);
+                        check.setCondition("");
+                        check.setType(CheckType.SINGLE_PAGE);
+                        check.setCheckBrokenLinks(false);
+                        check.setSendEmails(true);
+                        check.setSocketTimeout(20000);
+                        check.setConnectionTimeout(20000);
+                        check.setScheduledInterval(15);
+                        check.setChartPeriodType(IntervalType.HOUR);
+                        check.setChartPeriodValue(1);
+                        check.setHttpMethod(HttpMethod.GET);
+                        check.setCheckForChanges(true);
+                        Calendar calendar = new GregorianCalendar();
+                        calendar.set(Calendar.SECOND, 0);
+                        calendar.set(Calendar.MILLISECOND, 0);
+                        check.setScheduledStartDate(calendar.getTime());
+                        check.setScheduledIntervalType(IntervalType.MINUTE);
+                        checkRepository.save(check);
+                    } else {
+                        log.warn("Couldn't import checkDefinition (expected:name,url:"+checkDefinition);
+                    }
+                }
+                checkDefinition = br.readLine();
+            }
+        }
+    }
 
 }
