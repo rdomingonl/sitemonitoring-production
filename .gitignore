@@ -3,3 +3,5 @@
 /debug.log
 /monit/
 /sitemonitoring/
+.settings
+sitemonitoring-temp/
