@@ -302,6 +302,7 @@ public class SinglePageCheckThread extends AbstractSingleCheckThread {
 	      if (previousEndMatch<webPage.length()) {
 	    	  filteredWebPage.append(webPage.substring(previousEndMatch));
 	      }
+	      log.trace("===================================================");
 	      return filteredWebPage.toString();
 	  }
 	
