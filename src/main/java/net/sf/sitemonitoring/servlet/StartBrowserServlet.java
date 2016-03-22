@@ -23,13 +23,13 @@ public class StartBrowserServlet extends HttpServlet {
 		if (!standaloneProfileActive) {
 			return;
 		}
-		try {
+		/*try {
 			if (Desktop.isDesktopSupported()) {
 				System.out.println("*** START BROWSER ***");
 				Desktop.getDesktop().browse(new URI("http://localhost:" + environment.getProperty("server.port")));
 			}
 		} catch (Throwable ex) {
 			log.error("Couldn't start browser", ex);
-		}
+		}*/
 	}
 }
